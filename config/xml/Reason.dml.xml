@@ -1,0 +1,21 @@
+<!-- config/xml/Product.dcm.xml -->
+<doctrine-mapping xmlns="http://doctrine-project.org/schemas/orm/doctrine-mapping"
+      xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+      xsi:schemaLocation="http://doctrine-project.org/schemas/orm/doctrine-mapping
+                          https://www.doctrine-project.org/schemas/orm/doctrine-mapping.xsd">
+
+      <entity name="Reason" table="one_reason">
+          <id name="ReasonId" type="integer">
+              <generator strategy="AUTO" />
+          </id>
+          <field name="Reason" type="string" />
+          <field name="UserToId" type="integer" />
+          <field name="UserFromId" type="integer" />
+          <field name="Priority" type="integer" />
+          <field name="CreatedByUserId" type="integer" />
+          <field name="CreatedDate" type="datetime" />
+          <field name="ModifiedByUseriD" type="integer" />
+          <field name="ModifiedDate" type="datetime" />
+          <field name="Active" type="boolean" />
+      </entity>
+</doctrine-mapping>

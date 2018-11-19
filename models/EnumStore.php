@@ -8,6 +8,7 @@ class EnumControllers
 class Constanst
 {
     const DataSuccess = "Data recovered successfully";
+    const DataCreated = "Data created successfully";
 }
 
 ?>
