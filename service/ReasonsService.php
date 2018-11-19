@@ -17,31 +17,13 @@ class ReasonsService
 
         $repo   = $entityManager->getRepository('Reason');
         $query = $repo->findBy(array('UserToId' => $usertoid, 'Active' => '1'), array('Priority' => 'DESC', 'ReasonId' => 'DESC'), $take, $skip);
+        $count = $repo->count(array('UserToId' => $usertoid, 'Active' => '1'));
 
-
-// Set additional Query options
-        //$query->setQueryHint('foo', 'bar');
-        //$query->useResultCache('my_cache_id');
-
-// Execute Query
-        echo json_encode($query);
-        /*$single = $query->getSingleResult();
-        $array = $query->getArrayResult();
-        $scalar = $query->getScalarResult();
-        $singleScalar = $query->getSingleScalarResult();*/
-
-
-
-        /*$query = 'select * from numberone.`one_reason`'; // where UserFromId = "'.$reasonIdFrom.'" and active = 1';
-        $result = $entityManager->getRepository('Reason')->createNamedQuery($query)
-            ->setMaxResults($take)
-            ->setFirstResult($skip)
-            ->getResult();
-        $response->Data = $result;
+        $response->Data = $query;
         $response->Success = true;
         $response->Message = Constanst::DataSuccess;
-        $response->Total = 10;*/
-        //return $response;
+        $response->Total = $count;
+        return $response;
     }
 
     function Create(Reason $createReason){
