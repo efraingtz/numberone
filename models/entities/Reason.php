@@ -1,5 +1,5 @@
 <?
-include $_SERVER['DOCUMENT_ROOT'].'/numberoneapi/models/entities/Entity.php';
+require_once __dir__.'/Entity.php';
 
 /**
  * @Entity @Table(name="one_reason")
@@ -36,6 +36,12 @@ class Reason extends Entity
      * @var int
      **/
     public $Priority;
+
+    /**
+     * @Column(name="`Number`",type="integer")
+     * @var int
+     **/
+    public $Number;
 
     public function setReasonId($reasonId)
     {
@@ -86,6 +92,18 @@ class Reason extends Entity
     {
         return $this->Priority;
     }
+
+    public function setNumber($number)
+    {
+        $this->Number = $number;
+    }
+
+    public function getNumber()
+    {
+        return $this->Number;
+    }
+
+    public $FromUserName;
 
 }
 

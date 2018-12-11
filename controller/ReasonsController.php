@@ -24,6 +24,13 @@ class ReasonsController extends BaseApi
 
     protected function GetDashboard() {
         if ($this->method == 'GET') {
+            $reason = new Reason();
+            $reason->UserFromId = 1;
+            $reason->UserToId =1;
+            $reason->Priority = 1;
+            $reason->Reason = "Reason ".$_GET["take"];
+            $reason->Number = 3;
+            //$this->reasonsService->Create($reason);
             return $this->reasonsService->GetDashboard();
         } else {
 
