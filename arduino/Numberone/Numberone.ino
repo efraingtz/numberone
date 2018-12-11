@@ -23,7 +23,7 @@ bool inputAction = false;
 const int failure = -1;
 const int capacity = JSON_OBJECT_SIZE(20);
 int skip = 0;
-const int take = 10;
+const int take = 2;
 int userId = 1;
 int totalResponse = 0;
 int currentReason = 0;
@@ -63,7 +63,7 @@ void loop() {
     }
     else if(currentReason >= totalResponse )
     {
-      skip = totalResponse;
+      skip = skip + totalResponse;
       currentReason = 0;
       json = getRequestJson();
       Serial.println(json);
