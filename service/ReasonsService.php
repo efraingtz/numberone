@@ -3,6 +3,7 @@ require_once $_SERVER['DOCUMENT_ROOT'].'/numberoneapi/models/Response.php';
 require_once $_SERVER['DOCUMENT_ROOT'].'/numberoneapi/models/EnumStore.php';
 require_once $_SERVER['DOCUMENT_ROOT'].'/numberoneapi/models/Response.php';
 require_once $_SERVER['DOCUMENT_ROOT'].'/numberoneapi/models/entities/Reason.php';
+require_once $_SERVER['DOCUMENT_ROOT'].'/numberoneapi/models/entities/User.php';
 require_once $_SERVER['DOCUMENT_ROOT']."/numberoneapi/bootstrap.php";
 
 class ReasonsService
@@ -19,6 +20,13 @@ class ReasonsService
         $query = $repo->findBy(array('UserToId' => $usertoid, 'Active' => '1'), array('Priority' => 'DESC', 'ReasonId' => 'DESC'), $take, $skip);
         $count = $repo->count(array('UserToId' => $usertoid, 'Active' => '1'));
 
+        foreach($query as $k => $reason)
+        {
+            $repo = $entityManager->getRepository('User');
+            $user = $repo->find($reason->UserFromId);
+            $reason->UserFromName = $user->UserName;
+        }
+
         $response->Data = $query;
         $response->Success = true;
         $response->Message = Constanst::DataSuccess;
@@ -34,6 +42,7 @@ class ReasonsService
         $reason->setUserToId($createReason->getUserToId());
         $reason->setUserFromId($createReason->getUserFromId());
         $reason->setPriority($createReason->getPriority());
+        $reason->setNumber($createReason->getNumber());
         global $entityManager;
         $entityManager->persist($reason);
         $entityManager->flush();
