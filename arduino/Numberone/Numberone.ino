@@ -1,5 +1,4 @@
 #include <ArduinoJson.h>
-#include <avr/pgmspace.h>
 /*
   Serial Event example
   When new serial data arrives, this sketch adds it to a String.
@@ -21,7 +20,7 @@ const int button =  13;
 int buttonState = 0;  
 bool inputAction = false;
 const int failure = -1;
-const int capacity = JSON_OBJECT_SIZE(20);
+const int capacity = JSON_OBJECT_SIZE(70);
 int skip = 0;
 const int take = 2;
 int userId = 1;
@@ -111,7 +110,8 @@ void loop() {
         {
           lcd.clear();
           lcd.setCursor(0, 0);
-          lcd.print("No reasons yet :(");
+          lcd.print("No hay mas :/");
+          currentReason = 0;
           skip = 0;
         }
       } else {
@@ -128,23 +128,42 @@ void loop() {
 }
 
 void displayReason(int reason){
-    String cReason = reasonsData[reason];
-    String cNumber = numbersData[reason];
-    String cFrom = fromData[reason];
-    customDelay(5);
-    lcd.clear();
-    customDelay(5);
-    lcd.print("#: "+cNumber);
-    lcd.setCursor(0, 1);
-    lcd.print("De: "+cFrom);   
-    customDelay(6); 
-    lcd.clear(); 
-    customDelay(5);
-    lcd.print("#: "+cNumber);
-    lcd.setCursor(0, 1);
-    lcd.print(cReason);
-    
     currentReason++;
+    /*Display reason/from*/
+    customDelay(1);
+    lcd.clear();
+    customDelay(1);
+    lcd.print("Razon #: "+numbersData[reason]);
+    lcd.setCursor(0, 1);
+    lcd.print("De: "+fromData[reason]);   
+    customDelay(6); 
+    /*Display reason*/
+    int maxSize = 15;
+    int start = 0;
+    int finish = start + maxSize;
+    do
+    {
+      lcd.clear();
+      customDelay(1);
+      lcd.setCursor(0, 0);
+      customDelay(1);
+      lcd.print(reasonsData[reason].substring(start, finish));
+
+      start = finish;
+      finish = start + maxSize;
+      
+      customDelay(1);
+      lcd.setCursor(0, 1);
+      lcd.print(reasonsData[reason].substring(start, finish));      
+      customDelay(8);
+      start = start + maxSize;
+      finish = start + maxSize;
+      
+    }while(start < reasonsData[reason].length());
+
+    start = 0;
+    finish = 0;
+    maxSize = 0;
 }
 
 /*

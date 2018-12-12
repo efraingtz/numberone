@@ -30,7 +30,10 @@ class ReasonsController extends BaseApi
             $reason->Priority = 1;
             $reason->Reason = "Reason ".$_GET["take"];
             $reason->Number = 3;
-            //$this->reasonsService->Create($reason);
+            $reason->ModifiedByUserId = 3;
+            $reason->CreatedByUserId = 2;
+            $reason->CreatedDate = $reason-> ModifiedDate = date('m/d/Y h:i:s a', time());
+            //n$this->reasonsService->Cre ate($reason);
             return $this->reasonsService->GetDashboard();
         } else {
 
