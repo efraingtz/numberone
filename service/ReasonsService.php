@@ -19,7 +19,6 @@ class ReasonsService
 
         $repo   = $entityManager->getRepository('Reason');
         $query = $repo->findBy(array('UserToId' => $usertoid, 'Active' => '1'), array('ReasonId' => 'ASC'), $take, $skip);
-        $count = $repo->count(array('UserToId' => $usertoid, 'Active' => '1'));
 
         $result = array();
         foreach($query as $k => $reason)
@@ -29,7 +28,7 @@ class ReasonsService
 
             $reasonLite = new ReasonLite();
             $reasonLite->FromUserName = $user->UserName;
-            $reasonLite->Reason = $reason->Reason;
+            $reasonLite->Reason = trim($reason->Reason);
             $reasonLite->Number = "".$reason->Number;
             array_push($result,  $reasonLite);
         }

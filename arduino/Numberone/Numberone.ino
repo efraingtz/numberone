@@ -27,9 +27,9 @@ int userId = 1;
 int totalResponse = 0;
 int currentReason = 0;
 String host = "10.0.0.94";
-const String reasonsData[take];
-const String numbersData[take];
-const String fromData[take];
+String reasonsData[take];
+String numbersData[take];
+String fromData[take];
 
 void setup() {
 
