@@ -2,7 +2,7 @@
 require_once 'controller/ReasonsController.php';
 require_once 'models/EnumStore.php';
 
-$request = ($_REQUEST['request']);
+$request = ($_GET['request']);
 $parseRequest = explode('/', rtrim($request, '/'));
 $controller = $parseRequest[0];
 $request = $parseRequest[1];

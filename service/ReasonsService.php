@@ -3,6 +3,7 @@ require_once $_SERVER['DOCUMENT_ROOT'].'/numberoneapi/models/Response.php';
 require_once $_SERVER['DOCUMENT_ROOT'].'/numberoneapi/models/EnumStore.php';
 require_once $_SERVER['DOCUMENT_ROOT'].'/numberoneapi/models/Response.php';
 require_once $_SERVER['DOCUMENT_ROOT'].'/numberoneapi/models/entities/Reason.php';
+require_once $_SERVER['DOCUMENT_ROOT'].'/numberoneapi/models/ViewModel/ReasonLite.php';
 require_once $_SERVER['DOCUMENT_ROOT'].'/numberoneapi/models/entities/User.php';
 require_once $_SERVER['DOCUMENT_ROOT']."/numberoneapi/bootstrap.php";
 
@@ -17,20 +18,25 @@ class ReasonsService
         global $entityManager;
 
         $repo   = $entityManager->getRepository('Reason');
-        $query = $repo->findBy(array('UserToId' => $usertoid, 'Active' => '1'), array('Priority' => 'DESC', 'ReasonId' => 'DESC'), $take, $skip);
-        $count = $repo->count(array('UserToId' => $usertoid, 'Active' => '1'));
+        $query = $repo->findBy(array('UserToId' => $usertoid, 'Active' => '1'), array('ReasonId' => 'ASC'), $take, $skip);
 
+        $result = array();
         foreach($query as $k => $reason)
         {
             $repo = $entityManager->getRepository('User');
             $user = $repo->find($reason->UserFromId);
-            $reason->UserFromName = $user->UserName;
+
+            $reasonLite = new ReasonLite();
+            $reasonLite->FromUserName = $user->UserName;
+            $reasonLite->Reason = trim($reason->Reason);
+            $reasonLite->Number = "".$reason->Number;
+            array_push($result,  $reasonLite);
         }
 
-        $response->Data = $query;
+        $response->Data = $result;
         $response->Success = true;
         $response->Message = Constanst::DataSuccess;
-        $response->Total = $count;
+        $response->Total = sizeof($result);
         return $response;
     }
 
