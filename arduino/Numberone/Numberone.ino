@@ -16,13 +16,16 @@
 LiquidCrystal lcd(7,8, 9, 10, 11, 12); // Creates an LC object. Parameters: (rs, enable, d4, d5, d6, d7) 
 String inputString = "";
 bool stringComplete = false;
-const int button =  13;
+const int btn1 =  A2;
+const int btn2 =  A3;
+const int btn3 =  A4;
+const int btn4 =  A5;
 int buttonState = 0;  
 bool inputAction = false;
 const int failure = -1;
 const int capacity = JSON_OBJECT_SIZE(70);
 int skip = 0;
-const int take = 2;
+const int take = 1;
 int userId = 1;
 int totalResponse = 0;
 int currentReason = 0;
@@ -30,6 +33,17 @@ String host = "10.0.0.94";
 String reasonsData[take];
 String numbersData[take];
 String fromData[take];
+bool point = false;
+int ledState = LOW;             // ledState used to set the LED
+int btnouts[] = {2,3,4,5};
+int buzzer = A1;
+
+
+unsigned long previousMillis = 0;        // will store last time LED was updated
+int currentLed = 0;
+// constants won't change:
+long interval = 1000; 
+bool pause = false;
 
 void setup() {
 
@@ -40,48 +54,117 @@ void setup() {
   
   
   // init ports
-  pinMode(button, INPUT);
+  pinMode(buzzer, OUTPUT);
+  pinMode(btn1, INPUT);
+  pinMode(btn2, INPUT);
+  pinMode(btn3, INPUT);
+  pinMode(btn4, INPUT);
+
+  for(int x = 0; x < sizeof(btnouts); x++)
+  {
+    pinMode(btnouts[x], OUTPUT);
+  }
+  
   // initialize serial:
   Serial.begin(115200);
   lcd.setCursor(0, 0);
-  lcd.print("Razones por las que");
+  lcd.print("Bienvenido");
   lcd.setCursor(0, 1);
-  lcd.print("you rock lml");
+  for(int a=0;a<5;a++)
+  {
+    lcd.setCursor(a, 1);
+    lcd.print(".");
+    customDelay(2);
+  }
   inputString.reserve(200);
+  customDelay(2);
 }
 
 void loop() {
 
-  buttonState = digitalRead(button);
-  if (buttonState == HIGH && !inputAction) {
-    // Call api
-    inputAction = true;
-    String json = getRequestJson();
-    if(currentReason == 0){
-      Serial.println(json);
+  unsigned long currentMillis = millis();
+  if(!pause){
+    if (currentMillis - previousMillis >= interval) {
+      for(int x = 0; x < sizeof(btnouts); x++)
+      {
+        digitalWrite(btnouts[x], LOW);
+      }
+      // save the last time you blinked the LED
+      previousMillis = currentMillis;
+      interval = random(200, 1000);
+      int a = random(0, sizeof(btnouts));
+      while(a == currentLed)
+      {
+         a = random(0, sizeof(btnouts));
+      }
+      digitalWrite(btnouts[a], HIGH);
+      currentLed = a;
     }
-    else if(currentReason >= totalResponse )
+  
+     int states[] =  {
+        digitalRead(btn1),
+        digitalRead(btn2),
+        digitalRead(btn3),
+        digitalRead(btn4)
+      };
+      
+    for(int x = 0; x < sizeof(states); x++)
     {
-      skip = skip + totalResponse;
-      currentReason = 0;
-      json = getRequestJson();
-      Serial.println(json);
+      if(states[x] == HIGH && x == currentLed && !inputAction)
+      {
+           handleDisplayReason();
+           pause = true;
+      } 
+      else if (states[x] == HIGH && !inputAction)
+      {
+          lcd.clear();
+          customDelay(1);
+          lcd.setCursor(0, 0);
+          lcd.print("X_____x");
+          digitalWrite(buzzer, HIGH);
+          customDelay(2);
+          digitalWrite(buzzer, LOW);
+          customDelay(3 );
+          lcd.clear();
+      }
     }
-    else
-    {
-      displayReason(currentReason);
-      customDelay(3);
-      inputAction = false;
-    }
+  }
+  checkSerial();
+}
+
+void handleDisplayReason()
+{
+  inputAction = true;
+  String json = getRequestJson();
+  if(currentReason == 0){
+    Serial.println(json);
+  }
+  else if(currentReason >= totalResponse )
+  {
+    skip = skip + totalResponse;
+    currentReason = 0;
+    json = getRequestJson();
+    Serial.println(json);
+  }
+  else
+  {
+    displayReason(currentReason);
+    customDelay(3);
+    inputAction = false;
   } 
-  // print the string when a newline arrives:
+}
+
+void checkSerial()
+{
   if (stringComplete) {
     if(inputString.toInt())
     {
       int x = inputString.toInt();
       if(x == failure)
       {
-        
+        lcd.print("ERROR WIFI");
+        customDelay(5);
+        lcd.clear();
       }
     }
     else 
@@ -105,6 +188,7 @@ void loop() {
         if(totalResponse > 0) {
           currentReason = 0;
           displayReason(currentReason);
+          pause = false;
         }
         else
         {
@@ -124,7 +208,6 @@ void loop() {
     stringComplete = false;
     inputAction = false;
   }
-  //delay(100); 
 }
 
 void displayReason(int reason){
