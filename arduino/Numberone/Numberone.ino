@@ -119,14 +119,17 @@ void displayReason(){
     customDelay(1);
     lcd.setCursor(0, 0);
     customDelay(1);
-    lcd.print("Razon #: "+reasonNumber);
-    customDelay(10); 
+    String rN = reasonNumber.substring(0, reasonNumber.length()-1);
+    lcd.print("Razon #: "+rN);
+    customDelay(4); 
     lcd.setCursor(0, 1);
-    lcd.print("De: "+reasonFrom);   
-    customDelay(6); 
+    String rF = reasonFrom.substring(0, reasonFrom.length()-1);
+    lcd.print("De: "+rF);   
+    customDelay(4); 
     int maxSize = 15;
     int start = 0;
-    int finish = start + maxSize;
+    int tempMax = start + maxSize;
+    int finish = tempMax > reason.length() ? reason.length()-1 : tempMax;
     do
     {
       lcd.clear();
@@ -136,15 +139,22 @@ void displayReason(){
       lcd.print(reason.substring(start, finish));
 
       start = finish;
-      finish = start + maxSize;
-      
+      tempMax = start + maxSize;
+      finish = tempMax > reason.length() ? reason.length()-1 : tempMax;
+     
       customDelay(1);
-      lcd.setCursor(0, 1);
-      lcd.print(reason.substring(start, finish));      
-      customDelay(10);
-      start = start + maxSize;
-      finish = start + maxSize;
-      
+      if(start < reason.length()-1){
+        lcd.setCursor(0, 1);
+        lcd.print(reason.substring(start, finish));      
+        start = start + maxSize;
+        tempMax = start + maxSize;
+        finish = tempMax > reason.length() ? reason.length()-1 : tempMax; 
+      }
+      else
+      {
+        start++;
+      }
+      customDelay(8);
     }while(start < reason.length());
 
     start = 0;
@@ -174,7 +184,7 @@ void serialEvent() {
             lcd.clear();
             customDelay(1);
             lcd.setCursor(0, 0);
-            lcd.print("ERROR WIFI");
+            lcd.print("ERROR HTTP");
             customDelay(5);
             lcd.clear();
             inputAction = false;
@@ -195,7 +205,20 @@ void serialEvent() {
           }
           else if(x == -3)
           {
+            lcd.clear();
+            customDelay(1);
             lcd.print("ERROR DATOS");
+            customDelay(5);
+            lcd.clear();
+            inputAction = false;
+            pause = false;
+            fail = true;
+          }
+          else if(x == -4)
+          {
+            lcd.clear();
+            customDelay(1);
+            lcd.print("ERROR WIFI");
             customDelay(5);
             lcd.clear();
             inputAction = false;
