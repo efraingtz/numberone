@@ -1,49 +1,23 @@
-#include <ArduinoJson.h>
-/*
-  Serial Event example
-  When new serial data arrives, this sketch adds it to a String.
-  When a newline is received, the loop prints the string and clears it.
-  A good test for this is to try it with a GPS receiver that sends out
-  NMEA 0183 sentences.
-  NOTE: The serialEvent() feature is not available on the Leonardo, Micro, or
-  other ATmega32U4 based boards.
-  created 9 May 2011
-  by Tom Igoe
-  This example code is in the public domain.
-  http://www.arduino.cc/en/Tutorial/SerialEvent
-*/
 #include <LiquidCrystal.h> // includes the LiquidCrystal Library 
-LiquidCrystal lcd(7,8, 9, 10, 11, 12); // Creates an LC object. Parameters: (rs, enable, d4, d5, d6, d7) 
+LiquidCrystal lcd(A0, A1, A2, A3, A4, A5); // Creates an LC object. Parameters: (rs, enable, d4, d5, d6, d7) 
 String inputString = "";
 bool stringComplete = false;
-const int btn1 =  A2;
-const int btn2 =  A3;
-const int btn3 =  A4;
-const int btn4 =  A5;
+int btnsIn[] = {4,5,6,7};
 int buttonState = 0;  
 bool inputAction = false;
-const int failure = -1;
-const int capacity = JSON_OBJECT_SIZE(70);
-int skip = 0;
-const int take = 1;
-int userId = 1;
-int totalResponse = 0;
-int currentReason = 0;
-String host = "10.0.0.94";
-String reasonsData[take];
-String numbersData[take];
-String fromData[take];
 bool point = false;
-int ledState = LOW;             // ledState used to set the LED
-int btnouts[] = {2,3,4,5};
-int buzzer = A1;
-
-
+int btnouts[] = {8,9,10,11};
+int buzzer = 13;
+String reason;
+String reasonNumber;
+String reasonFrom;
+int readCase = 0;
 unsigned long previousMillis = 0;        // will store last time LED was updated
 int currentLed = 0;
 // constants won't change:
 long interval = 1000; 
 bool pause = false;
+int buttonsSize = 4;
 
 void setup() {
 
@@ -55,14 +29,11 @@ void setup() {
   
   // init ports
   pinMode(buzzer, OUTPUT);
-  pinMode(btn1, INPUT);
-  pinMode(btn2, INPUT);
-  pinMode(btn3, INPUT);
-  pinMode(btn4, INPUT);
-
-  for(int x = 0; x < sizeof(btnouts); x++)
+ 
+  for(int x = 0; x < buttonsSize; x++)
   {
     pinMode(btnouts[x], OUTPUT);
+    pinMode(btnsIn[x], INPUT);
   }
   
   // initialize serial:
@@ -77,7 +48,6 @@ void setup() {
     customDelay(2);
   }
   inputString.reserve(200);
-  customDelay(2);
 }
 
 void loop() {
@@ -85,38 +55,40 @@ void loop() {
   unsigned long currentMillis = millis();
   if(!pause){
     if (currentMillis - previousMillis >= interval) {
-      for(int x = 0; x < sizeof(btnouts); x++)
+      for(int x = 0; x < buttonsSize; x++)
       {
         digitalWrite(btnouts[x], LOW);
       }
       // save the last time you blinked the LED
       previousMillis = currentMillis;
       interval = random(200, 1000);
-      int a = random(0, sizeof(btnouts));
+      int a = random(0, buttonsSize -1);
       while(a == currentLed)
       {
-         a = random(0, sizeof(btnouts));
+         a = random(0, buttonsSize - 1);
       }
       digitalWrite(btnouts[a], HIGH);
       currentLed = a;
     }
   
      int states[] =  {
-        digitalRead(btn1),
-        digitalRead(btn2),
-        digitalRead(btn3),
-        digitalRead(btn4)
+        digitalRead(btnsIn[0]),
+        digitalRead(btnsIn[1]),
+        digitalRead(btnsIn[2]),
+        digitalRead(btnsIn[3])
       };
       
-    for(int x = 0; x < sizeof(states); x++)
+    for(int x = 0; x < buttonsSize; x++)
     {
       if(states[x] == HIGH && x == currentLed && !inputAction)
       {
-           handleDisplayReason();
            pause = true;
+           handleDisplayReason();
+           break;
       } 
       else if (states[x] == HIGH && !inputAction)
       {
+          inputAction = true;
           lcd.clear();
           customDelay(1);
           lcd.setCursor(0, 0);
@@ -124,125 +96,66 @@ void loop() {
           digitalWrite(buzzer, HIGH);
           customDelay(2);
           digitalWrite(buzzer, LOW);
-          customDelay(3 );
+          customDelay(7);
           lcd.clear();
+          inputAction = false;
+          break;
       }
     }
   }
-  checkSerial();
 }
 
 void handleDisplayReason()
 {
   inputAction = true;
   String json = getRequestJson();
-  if(currentReason == 0){
-    Serial.println(json);
-  }
-  else if(currentReason >= totalResponse )
-  {
-    skip = skip + totalResponse;
-    currentReason = 0;
-    json = getRequestJson();
-    Serial.println(json);
-  }
-  else
-  {
-    displayReason(currentReason);
-    customDelay(3);
-    inputAction = false;
-  } 
+  Serial.println(json);
 }
 
-void checkSerial()
-{
-  if (stringComplete) {
-    if(inputString.toInt())
-    {
-      int x = inputString.toInt();
-      if(x == failure)
-      {
-        lcd.print("ERROR WIFI");
-        customDelay(5);
-        lcd.clear();
-      }
-    }
-    else 
-    {
-      //Deserialize response from api
-      DynamicJsonBuffer jb(capacity);
-      //JsonObject& obj = jb.parseObject("{\"Total\":1,\"Success\":true,\"Message\":\"Data recovered successfully\"}");
-      JsonObject& obj = jb.parseObject(inputString);
-      if (obj.success()) {
-        totalResponse = obj["Total"];
-        String reasons[totalResponse] PROGMEM;
-        for(int a =0; a < totalResponse; a++)
-        {
-          String currentReason = obj["Data"][a]["Reason"];
-          String numberReason = obj["Data"][a]["Number"];
-          String fromReason = obj["Data"][a]["FromUserName"];
-          reasonsData[a] = currentReason;
-          numbersData[a] = numberReason;
-          fromData[a] = fromReason;
-        }
-        if(totalResponse > 0) {
-          currentReason = 0;
-          displayReason(currentReason);
-          pause = false;
-        }
-        else
-        {
-          lcd.clear();
-          lcd.setCursor(0, 0);
-          lcd.print("No hay mas :/");
-          currentReason = 0;
-          skip = 0;
-        }
-      } else {
-      // parseObject() failed
-        Serial.println(inputString);
-      }
-    }
-    // clear the string:
-    inputString = "";
-    stringComplete = false;
-    inputAction = false;
-  }
-}
-
-void displayReason(int reason){
-    currentReason++;
+void displayReason(){
     /*Display reason/from*/
     customDelay(1);
     lcd.clear();
     customDelay(1);
-    lcd.print("Razon #: "+numbersData[reason]);
+    lcd.setCursor(0, 0);
+    customDelay(1);
+    String rN = reasonNumber.substring(0, reasonNumber.length()-1);
+    lcd.print("Razon #: "+rN);
+    customDelay(4); 
     lcd.setCursor(0, 1);
-    lcd.print("De: "+fromData[reason]);   
-    customDelay(6); 
-    /*Display reason*/
+    String rF = reasonFrom.substring(0, reasonFrom.length()-1);
+    lcd.print("De: "+rF);   
+    customDelay(4); 
     int maxSize = 15;
     int start = 0;
-    int finish = start + maxSize;
+    int tempMax = start + maxSize;
+    int finish = tempMax > reason.length() ? reason.length()-1 : tempMax;
     do
     {
       lcd.clear();
       customDelay(1);
       lcd.setCursor(0, 0);
       customDelay(1);
-      lcd.print(reasonsData[reason].substring(start, finish));
+      lcd.print(reason.substring(start, finish));
 
       start = finish;
-      finish = start + maxSize;
-      
+      tempMax = start + maxSize;
+      finish = tempMax > reason.length() ? reason.length()-1 : tempMax;
+     
       customDelay(1);
-      lcd.setCursor(0, 1);
-      lcd.print(reasonsData[reason].substring(start, finish));      
+      if(start < reason.length()-1){
+        lcd.setCursor(0, 1);
+        lcd.print(reason.substring(start, finish));      
+        start = start + maxSize;
+        tempMax = start + maxSize;
+        finish = tempMax > reason.length() ? reason.length()-1 : tempMax; 
+      }
+      else
+      {
+        start++;
+      }
       customDelay(8);
-      start = start + maxSize;
-      finish = start + maxSize;
-      
-    }while(start < reasonsData[reason].length());
+    }while(start < reason.length());
 
     start = 0;
     finish = 0;
@@ -259,30 +172,99 @@ void serialEvent() {
     // get the new byte:
     char inChar = (char)Serial.read();
     // add it to the inputString:
-    inputString += inChar;
     // if the incoming character is a newline, set a flag so the main loop can
     // do something about it:
     if (inChar == '\n') {
+        bool fail = false;
+        if(inputString.toInt())
+        {
+          int x = inputString.toInt();
+          if(x == -1)
+          {
+            lcd.clear();
+            customDelay(1);
+            lcd.setCursor(0, 0);
+            lcd.print("ERROR HTTP");
+            customDelay(5);
+            lcd.clear();
+            inputAction = false;
+            inputString = "";
+            fail = true;
+          } 
+          else if(x == -2)
+          {
+            lcd.clear();
+            customDelay(1);
+            lcd.setCursor(0, 0);
+            lcd.print("NO HAY MAS...");
+            customDelay(5);
+            lcd.clear();
+            inputAction = false;
+            pause = false;
+            fail = true;
+          }
+          else if(x == -3)
+          {
+            lcd.clear();
+            customDelay(1);
+            lcd.print("ERROR DATOS");
+            customDelay(5);
+            lcd.clear();
+            inputAction = false;
+            pause = false;
+            fail = true;
+          }
+          else if(x == -4)
+          {
+            lcd.clear();
+            customDelay(1);
+            lcd.print("ERROR WIFI");
+            customDelay(5);
+            lcd.clear();
+            inputAction = false;
+            pause = false;
+            fail = true;
+          }
+        }
+      if(!fail)
+      {
+        switch(readCase)
+        {
+          case 0:
+            customDelay(3);
+            reason = inputString;
+            readCase++;
+          break;
+          case 1:
+            reasonFrom = inputString;
+            customDelay(3);
+            readCase++;
+          break;
+          case 2:
+            reasonNumber = inputString;
+            displayReason();
+            inputAction = false;
+            pause = false;
+            readCase = 0;
+          break;
+        }    
+      }
+      else
+      {
+        readCase = 0;
+      }
+      inputString = "";
       stringComplete = true;
+    }
+    else {
+      inputString += inChar;
     }
   }
 }
 
 String getRequestJson()
 {
-    String json = "{\"skip\": \"";
-    json = json + skip;
-    json = json + "\"";
-    json = json + ",\"take\": \"";
-    json = json + take;
-    json = json + "\"";
-    json = json + ",\"userid\": \"";
-    json = json + userId;
-    json = json + "\"";
-    json = json + ",\"host\": \"";
-    json = json + host;
-    json = json + "\"";
-    json = json + "}";
+    String json = "1";
     return json;
 }
 
