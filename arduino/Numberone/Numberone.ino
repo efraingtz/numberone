@@ -1,13 +1,14 @@
 #include <LiquidCrystal.h> // includes the LiquidCrystal Library 
-LiquidCrystal lcd(A0, A1, A2, A3, A4, A5); // Creates an LC object. Parameters: (rs, enable, d4, d5, d6, d7) 
+LiquidCrystal lcd(A5, A4, A3, A2, A1, A0); // Creates an LC object. Parameters: (rs, enable, d4, d5, d6, d7) 
 String inputString = "";
-bool stringComplete = false;
-int btnsIn[] = {4,5,6,7};
+bool stringComplete = false;                                                                                                                 
+int btnsIn[] = {4,4,4,4};
 int buttonState = 0;  
 bool inputAction = false;
 bool point = false;
-int btnouts[] = {8,9,10,11};
+int btnouts[] = {5,7,9,11};
 int buzzer = 13;
+int btnReason = 12;
 String reason;
 String reasonNumber;
 String reasonFrom;
@@ -29,7 +30,9 @@ void setup() {
   
   // init ports
   pinMode(buzzer, OUTPUT);
- 
+  pinMode(btnReason, OUTPUT);
+  digitalWrite(btnReason, LOW);
+
   for(int x = 0; x < buttonsSize; x++)
   {
     pinMode(btnouts[x], OUTPUT);
@@ -39,7 +42,7 @@ void setup() {
   // initialize serial:
   Serial.begin(115200);
   lcd.setCursor(0, 0);
-  lcd.print("Bienvenido");
+  lcd.print("Hola Mundo");
   lcd.setCursor(0, 1);
   for(int a=0;a<5;a++)
   {
@@ -57,21 +60,22 @@ void loop() {
     if (currentMillis - previousMillis >= interval) {
       for(int x = 0; x < buttonsSize; x++)
       {
-        digitalWrite(btnouts[x], LOW);
+        digitalWrite(btnouts[x], HIGH);
       }
       // save the last time you blinked the LED
       previousMillis = currentMillis;
       interval = random(200, 1000);
-      int a = random(0, buttonsSize -1);
+      int a = random(0, buttonsSize );
       while(a == currentLed)
       {
-         a = random(0, buttonsSize - 1);
+         a = random(0, buttonsSize);
       }
-      digitalWrite(btnouts[a], HIGH);
+      digitalWrite(btnouts[a], LOW);
       currentLed = a;
     }
   
-     int states[] =  {
+     int states[] = 
+     {
         digitalRead(btnsIn[0]),
         digitalRead(btnsIn[1]),
         digitalRead(btnsIn[2]),
@@ -108,8 +112,7 @@ void loop() {
 void handleDisplayReason()
 {
   inputAction = true;
-  String json = getRequestJson();
-  Serial.println(json);
+  Serial.println("1");
 }
 
 void displayReason(){
@@ -236,12 +239,12 @@ void serialEvent() {
             readCase++;
           break;
           case 1:
-            reasonFrom = inputString;
+            reasonNumber = inputString;
             customDelay(3);
             readCase++;
           break;
           case 2:
-            reasonNumber = inputString;
+            reasonFrom = inputString;
             displayReason();
             inputAction = false;
             pause = false;

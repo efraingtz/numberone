@@ -1,10 +1,10 @@
 #include <EEPROM.h>
-
 #include <ESP8266WiFi.h>
 #include <ESP8266HTTPClient.h>
 #include <ArduinoJson.h>
+#include <SoftwareSerial.h>   // Incluimos la librería  SoftwareSerial  
 
-
+SoftwareSerial BT(13,15);    // Definimos los pines RX y TX del Arduino conectados al Bluetooth
 String baseApi = "numberoneapi/Reasons/";
 const int failure = -1;
 String host = "numberzero.com.mx";
@@ -18,17 +18,17 @@ String ssid = "";
 String password = "";
 DynamicJsonBuffer jsonBuffer(bufferSize);
 bool inputAction = false;
-const int buttonPin = 5;
 String inputString = "";
 bool stringComplete = false;
 int epromCounter = 1;
+bool isAvailable = true;
 //A5d8n9V2y3z7
 
 void setup()
 {
   Serial.begin(115200);
+  BT.begin(115200); 
   EEPROM.begin(512); //Max bytes of eeprom to use
-  pinMode(buttonPin, INPUT);
   epromCounter=1;
   readWifi();
   setupNetwork();
@@ -112,7 +112,11 @@ void getReasons(){
               String numberReason = obj["Data"][a]["Number"];
               String fromReason = obj["Data"][a]["FromUserName"];
               Serial.println(currentReason);                     //Print the response payload
-              delay(2000);
+              delay(100);
+              Serial.println(numberReason);                     //Print the response payload
+              delay(100);
+              Serial.println(fromReason);                     //Print the response payload
+              delay(1000);
             }
             else
             {
@@ -135,6 +139,7 @@ void getReasons(){
   {
       errorResponse(-4);    
   }
+  isAvailable = true;
 }
 
 void loop() {
@@ -142,36 +147,40 @@ void loop() {
    {
       // read the incoming byte:
       String inputString = Serial.readString();
-      int stringSize = inputString.length();
-      String intro = inputString.substring(0,4);
-      char _wifi[stringSize];
-      char _pass[stringSize];
-      if(intro == "WIFI")
+      if(inputString.substring(0,1) == "1")
       {
-        ssid = inputString.substring(4);
-        saveWifi(ssid+"/");
-        connectWifi();
-      }
-      if(intro == "PASS")
-      {
-        password = inputString.substring(4);
-        saveWifi(password);
-        connectWifi();
-        epromCounter = 1;
+        if(WiFi.status() == WL_CONNECTED)
+         {
+          getReasons();
+         }
+         else
+         {      
+          errorResponse(-4);    
+          connectWifi();
+         }
       }
    }
-    int buttonState = digitalRead(buttonPin);
-    if (buttonState == HIGH) {
-      if(WiFi.status() == WL_CONNECTED)
-       {
-        getReasons();
-       }
-       else
-       {      
-        errorResponse(-4);    
-        connectWifi();
-       }
-    }
+   if(BT.available() > 0)
+   {
+        String btInputString = BT.readString();
+        int stringSize = btInputString.length();
+        String intro = btInputString.substring(0,4);
+        char _wifi[stringSize];
+        char _pass[stringSize];
+        if(intro == "WIFI")
+        {
+          ssid = btInputString.substring(4);
+          saveWifi(ssid+"/");
+          connectWifi();
+        }
+        if(intro == "PASS")
+        {
+          password = btInputString.substring(4);
+          saveWifi(password);
+          connectWifi();
+          epromCounter = 1;
+        }
+   }
 }
 
 void errorResponse(int error)
